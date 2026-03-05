@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PPL Weight Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0c;
+    --surface: #111115;
+    --card: #16161c;
+    --border: #242430;
+    --accent-push: #ff4d2e;
+    --accent-pull: #2e9eff;
+    --accent-legs: #2eff8a;
+    --accent-rest: #888;
+    --text: #f0f0f4;
+    --muted: #6b6b80;
+    --success: #2eff8a;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: linear-gradient(180deg, #111115 0%, var(--bg) 100%);
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    letter-spacing: 3px;
+    background: linear-gradient(135deg, #ff4d2e, #ff9a2e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  .week-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .week-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .week-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 14px;
+    color: var(--text);
+    min-width: 90px;
+    text-align: center;
+  }
+
+  .btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--border); }
+  .btn.primary {
+    background: var(--accent-push);
+    border-color: var(--accent-push);
+    color: #fff;
+    font-weight: 600;
+  }
+  .btn.primary:hover { opacity: 0.85; }
+  .btn.export-btn {
+    font-size: 0.78rem;
+    padding: 7px 13px;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+  }
+
+  /* NAV DAYS */
+  .day-nav {
+    display: flex;
+    gap: 6px;
+    padding: 18px 32px 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-wrap: wrap;
+  }
+  .day-nav::-webkit-scrollbar { display: none; }
+
+  .day-tab {
+    padding: 9px 20px;
+    border-radius: 50px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 0.8rem;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .day-tab:hover { border-color: #444; color: var(--text); }
+  .day-tab.active-push { background: rgba(255,77,46,0.15); border-color: var(--accent-push); color: var(--accent-push); }
+  .day-tab.active-pull { background: rgba(46,158,255,0.15); border-color: var(--accent-pull); color: var(--accent-pull); }
+  .day-tab.active-legs { background: rgba(46,255,138,0.15); border-color: var(--accent-legs); color: var(--accent-legs); }
+  .day-tab.active-rest { background: rgba(136,136,136,0.1); border-color: #555; color: #aaa; }
+
+  /* MAIN CONTENT */
+  main { padding: 24px 32px 60px; }
+
+  .session-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .session-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.4rem;
+    letter-spacing: 3px;
+    line-height: 1;
+  }
+  .session-title.push { color: var(--accent-push); }
+  .session-title.pull { color: var(--accent-pull); }
+  .session-title.legs { color: var(--accent-legs); }
+  .session-title.rest { color: var(--accent-rest); }
+
+  .session-subtitle {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* EXERCISE TABLE */
+  .exercise-table {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+
+  .exercise-table-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.4fr 1.4fr 1.4fr 1.4fr;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .col-label {
+    font-size: 0.65rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .exercise-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1.4fr 1.4fr 1.4fr 1.4fr;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.12s;
+    gap: 6px;
+  }
+  .exercise-row:last-child { border-bottom: none; }
+  .exercise-row:hover { background: rgba(255,255,255,0.02); }
+
+  .ex-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .ex-target {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    margin-top: 3px;
+  }
+
+  .ex-meta {
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    color: #888;
+  }
+
+  .weight-input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    width: 100%;
+    text-align: center;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  .weight-input:focus { border-color: #555; background: #1c1c24; }
+  .weight-input::placeholder { color: #3a3a50; }
+  .weight-input.changed { border-color: var(--accent-push) !important; }
+
+  /* set cells with individual inputs */
+  .sets-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .set-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .set-num {
+    font-size: 0.62rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    min-width: 14px;
+  }
+
+  /* PROGRESS BADGE */
+  .progress-pill {
+    font-size: 0.68rem;
+    font-family: 'DM Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 50px;
+    background: rgba(46,255,138,0.1);
+    color: var(--success);
+    border: 1px solid rgba(46,255,138,0.2);
+    white-space: nowrap;
+  }
+  .progress-pill.down {
+    background: rgba(255,77,46,0.1);
+    color: var(--accent-push);
+    border-color: rgba(255,77,46,0.2);
+  }
+  .progress-pill.same {
+    background: rgba(255,255,255,0.04);
+    color: var(--muted);
+    border-color: var(--border);
+  }
+
+  /* REST DAY */
+  .rest-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 60px 40px;
+    text-align: center;
+  }
+
+  .rest-icon { font-size: 3rem; margin-bottom: 16px; }
+
+  .rest-tips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-top: 28px;
+    text-align: left;
+  }
+
+  .rest-tip-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .rest-tip-card h4 { font-size: 0.8rem; font-family: 'DM Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .rest-tip-card p { font-size: 0.85rem; color: #ccc; line-height: 1.5; }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .stat-pill {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 110px;
+  }
+
+  .stat-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .stat-lbl {
+    font-size: 0.65rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* SAVE BUTTON */
+  .save-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    background: rgba(10,10,12,0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    z-index: 100;
+  }
+
+  .save-status {
+    font-size: 0.78rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+  }
+
+  .btn.save-btn {
+    background: var(--accent-legs);
+    border-color: var(--accent-legs);
+    color: #000;
+    font-weight: 700;
+    padding: 10px 24px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 2px;
+  }
+  .btn.save-btn:hover { opacity: 0.85; }
+
+  /* HISTORY PANEL */
+  .history-toggle {
+    font-size: 0.75rem;
+    font-family: 'DM Mono', monospace;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    margin-bottom: 12px;
+    transition: color 0.15s;
+  }
+  .history-toggle:hover { color: var(--text); }
+
+  .history-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-top: 16px;
+    display: none;
+  }
+  .history-panel.open { display: block; }
+
+  .history-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8rem;
+    font-family: 'DM Mono', monospace;
+  }
+  .history-entry:last-child { border-bottom: none; }
+  .history-week { color: var(--muted); }
+  .history-weights { color: var(--text); }
+
+  @media (max-width: 700px) {
+    header { padding: 18px 16px; }
+    main { padding: 16px 12px 80px; }
+    .day-nav { padding: 14px 12px 0; gap: 5px; }
+    .exercise-table-header,
+    .exercise-row {
+      grid-template-columns: 1.8fr 0.7fr 0.7fr 1.1fr 1.1fr 1.1fr 1.1fr;
+      padding: 10px 10px;
+      gap: 4px;
+    }
+    .save-bar { padding: 12px 16px; }
+    .logo { font-size: 1.6rem; }
+    .session-title { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">PPL TRACKER</div>
+    <div style="font-size:0.7rem;color:var(--muted);font-family:'DM Mono',monospace;margin-top:4px;letter-spacing:1px;">PUSH · PULL · LEGS · WEIGHT LOG</div>
+  </div>
+  <div class="week-controls">
+    <button class="btn" onclick="changeWeek(-1)">←</button>
+    <div>
+      <div class="week-label">Week</div>
+      <div class="week-badge" id="weekBadge">W1</div>
+    </div>
+    <button class="btn" onclick="changeWeek(1)">→</button>
+    <button class="btn export-btn" onclick="exportCSV()">⬇ CSV</button>
+  </div>
+</header>
+
+<div class="day-nav" id="dayNav"></div>
+
+<main id="mainContent"></main>
+
+<div class="save-bar">
+  <span class="save-status" id="saveStatus">Auto-saved locally</span>
+  <button class="btn save-btn" onclick="saveData()">💾 SAVE WEEK</button>
+</div>
+
+<script>
+// ===================== DATA =====================
+const DAYS = [
+  {
+    id: 'push1', label: 'MON · PUSH 1', type: 'push',
+    title: 'PUSH DAY 1', subtitle: 'Monday — Heavy Compound · Chest / Shoulders / Triceps',
+    exercises: [
+      { name: 'Flat Barbell Bench Press', target: 'Middle Chest', sets: 4, reps: '6-8' },
+      { name: 'Incline Barbell Press', target: 'Upper Chest', sets: 4, reps: '8-10' },
+      { name: 'Decline Bench Press', target: 'Lower Chest', sets: 3, reps: '10-12' },
+      { name: 'Barbell Overhead Press', target: 'Front Delt', sets: 4, reps: '6-8' },
+      { name: 'Lateral Raises', target: 'Side Delt', sets: 3, reps: '12-15' },
+      { name: 'Skull Crushers', target: 'Long Head Tri', sets: 3, reps: '10-12' },
+      { name: 'Tricep Pushdown', target: 'Lateral Head Tri', sets: 3, reps: '12-15' },
+    ]
+  },
+  {
+    id: 'pull1', label: 'TUE · PULL 1', type: 'pull',
+    title: 'PULL DAY 1', subtitle: 'Tuesday — Deadlift Focus · Back / Biceps / Rear Delts',
+    exercises: [
+      { name: 'Deadlift', target: 'Lower Back / Lats', sets: 4, reps: '4-6' },
+      { name: 'Barbell Row', target: 'Middle / Upper Back', sets: 4, reps: '8-10' },
+      { name: 'Pull-ups / Weighted', target: 'Lats', sets: 4, reps: '6-10' },
+      { name: 'Face Pulls', target: 'Rear Delt', sets: 3, reps: '15-20' },
+      { name: 'Incline Dumbbell Curl', target: 'Long Head Bicep', sets: 3, reps: '10-12' },
+      { name: 'Preacher Curl', target: 'Short Head Bicep', sets: 3, reps: '10-12' },
+      { name: 'Reverse Curl', target: 'Brachialis', sets: 2, reps: '12-15' },
+    ]
+  },
+  {
+    id: 'legs1', label: 'WED · LEGS 1', type: 'legs',
+    title: 'LEGS DAY 1', subtitle: 'Wednesday — Squat Focus · Quads / Hamstrings / Glutes',
+    exercises: [
+      { name: 'Barbell Back Squat', target: 'Quads / Glutes', sets: 4, reps: '6-8' },
+      { name: 'Romanian Deadlift', target: 'Hamstrings / Glutes', sets: 4, reps: '8-10' },
+      { name: 'Hip Thrust', target: 'Glutes', sets: 4, reps: '10-12' },
+      { name: 'Leg Extension', target: 'Quads (Isolation)', sets: 3, reps: '12-15' },
+      { name: 'Lying Leg Curl', target: 'Hamstrings', sets: 3, reps: '12-15' },
+      { name: 'Standing Calf Raise', target: 'Gastrocnemius', sets: 4, reps: '15-20' },
+    ]
+  },
+  {
+    id: 'push2', label: 'THU · PUSH 2', type: 'push',
+    title: 'PUSH DAY 2', subtitle: 'Thursday — Dumbbell & Cable · Isolation & Mind-Muscle',
+    exercises: [
+      { name: 'Incline Dumbbell Press', target: 'Upper Chest', sets: 4, reps: '10-12' },
+      { name: 'Cable Flyes', target: 'Middle Chest', sets: 3, reps: '12-15' },
+      { name: 'Decline Dumbbell Press', target: 'Lower Chest', sets: 3, reps: '10-12' },
+      { name: 'Dumbbell Shoulder Press', target: 'Front Delt', sets: 4, reps: '10-12' },
+      { name: 'Cable Lateral Raises', target: 'Side Delt', sets: 3, reps: '15-20' },
+      { name: 'Overhead Tricep Extension', target: 'Long Head Tri', sets: 3, reps: '12-15' },
+      { name: 'Close Grip Bench Press', target: 'Medial Head Tri', sets: 3, reps: '10-12' },
+    ]
+  },
+  {
+    id: 'pull2', label: 'FRI · PULL 2', type: 'pull',
+    title: 'PULL DAY 2', subtitle: 'Friday — Volume & Width · Lats / Upper Back',
+    exercises: [
+      { name: 'Romanian Deadlift', target: 'Lower Back / Hams', sets: 4, reps: '8-10' },
+      { name: 'Lat Pulldown', target: 'Lats', sets: 4, reps: '10-12' },
+      { name: 'Seated Cable Row', target: 'Middle Back', sets: 4, reps: '10-12' },
+      { name: 'Reverse Flyes', target: 'Rear Delt', sets: 3, reps: '15-20' },
+      { name: 'Hammer Curl', target: 'Long Head / Brachialis', sets: 3, reps: '10-12' },
+      { name: 'Concentration Curl', target: 'Short Head Bicep', sets: 3, reps: '12-15' },
+      { name: 'T-Bar Row', target: 'Upper Back', sets: 3, reps: '8-10' },
+    ]
+  },
+  {
+    id: 'legs2', label: 'SAT · LEGS 2', type: 'legs',
+    title: 'LEGS DAY 2', subtitle: 'Saturday — Volume & Definition · Leg Press Focus',
+    exercises: [
+      { name: 'Leg Press', target: 'Quads / Glutes', sets: 4, reps: '10-12' },
+      { name: 'Bulgarian Split Squat', target: 'Quads / Glutes', sets: 4, reps: '10-12 each' },
+      { name: 'Hack Squat', target: 'Quads', sets: 3, reps: '10-12' },
+      { name: 'Seated Leg Curl', target: 'Hamstrings', sets: 4, reps: '12-15' },
+      { name: 'Sumo Deadlift', target: 'Hamstrings / Adductors', sets: 3, reps: '8-10' },
+      { name: 'Seated Calf Raise', target: 'Soleus', sets: 4, reps: '20-25' },
+    ]
+  },
+  {
+    id: 'rest', label: 'SUN · REST', type: 'rest',
+    title: 'REST DAY', subtitle: 'Sunday — Full Recovery',
+    exercises: []
+  }
+];
+
+// ===================== STATE =====================
+let currentWeek = 1;
+let currentDay = 'push1';
+let data = {}; // data[week][dayId][exIdx][setIdx] = weight
+
+function storageKey() { return 'ppl_tracker_v2'; }
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(storageKey());
+    if (raw) data = JSON.parse(raw);
+  } catch(e) { data = {}; }
+}
+
+function saveData() {
+  localStorage.setItem(storageKey(), JSON.stringify(data));
+  const el = document.getElementById('saveStatus');
+  el.textContent = '✓ Saved ' + new Date().toLocaleTimeString();
+  setTimeout(() => el.textContent = 'Auto-saved locally', 2500);
+}
+
+function getWeight(week, dayId, exIdx, setIdx) {
+  return data?.[week]?.[dayId]?.[exIdx]?.[setIdx] ?? '';
+}
+
+function setWeight(week, dayId, exIdx, setIdx, val) {
+  if (!data[week]) data[week] = {};
+  if (!data[week][dayId]) data[week][dayId] = {};
+  if (!data[week][dayId][exIdx]) data[week][dayId][exIdx] = {};
+  data[week][dayId][exIdx][setIdx] = val;
+  saveData();
+}
+
+function getPrevWeight(dayId, exIdx, setIdx) {
+  if (currentWeek <= 1) return null;
+  return getWeight(currentWeek - 1, dayId, exIdx, setIdx);
+}
+
+// ===================== RENDER =====================
+function changeWeek(delta) {
+  const newWeek = currentWeek + delta;
+  if (newWeek < 1) return;
+  currentWeek = newWeek;
+  render();
+}
+
+function switchDay(dayId) {
+  currentDay = dayId;
+  renderDayNav();
+  renderMain();
+}
+
+function renderDayNav() {
+  const nav = document.getElementById('dayNav');
+  nav.innerHTML = DAYS.map(d => {
+    const active = d.id === currentDay;
+    const cls = active ? `day-tab active-${d.type}` : 'day-tab';
+    return `<button class="${cls}" onclick="switchDay('${d.id}')">${d.label}</button>`;
+  }).join('');
+}
+
+function renderMain() {
+  const day = DAYS.find(d => d.id === currentDay);
+  document.getElementById('weekBadge').textContent = 'W' + currentWeek;
+
+  if (day.type === 'rest') {
+    document.getElementById('mainContent').innerHTML = renderRestDay();
+    return;
+  }
+
+  // Stats
+  let totalLogged = 0;
+  day.exercises.forEach((ex, ei) => {
+    for (let s = 0; s < ex.sets; s++) {
+      if (getWeight(currentWeek, day.id, ei, s)) totalLogged++;
+    }
+  });
+  const totalSets = day.exercises.reduce((a,e) => a + e.sets, 0);
+  const pct = Math.round((totalLogged / totalSets) * 100);
+
+  const accentColor = day.type === 'push' ? 'var(--accent-push)' : day.type === 'pull' ? 'var(--accent-pull)' : 'var(--accent-legs)';
+
+  let html = `
+    <div class="session-header">
+      <div>
+        <div class="session-title ${day.type}">${day.title}</div>
+        <div class="session-subtitle">${day.subtitle}</div>
+      </div>
+      <div class="stats-bar">
+        <div class="stat-pill">
+          <span class="stat-val" style="color:${accentColor}">${pct}%</span>
+          <span class="stat-lbl">Logged</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-val">${totalLogged}/${totalSets}</span>
+          <span class="stat-lbl">Sets Done</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-val">${day.exercises.length}</span>
+          <span class="stat-lbl">Exercises</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  html += `<div class="exercise-table">`;
+  html += `<div class="exercise-table-header">
+    <span class="col-label">Exercise</span>
+    <span class="col-label">Sets</span>
+    <span class="col-label">Reps</span>
+    <span class="col-label">Set 1 (kg)</span>
+    <span class="col-label">Set 2 (kg)</span>
+    <span class="col-label">Set 3 (kg)</span>
+    <span class="col-label">Set 4 (kg)</span>
+  </div>`;
+
+  day.exercises.forEach((ex, ei) => {
+    const setInputs = [0,1,2,3].map(si => {
+      if (si >= ex.sets) return `<span></span>`;
+      const val = getWeight(currentWeek, day.id, ei, si);
+      const prev = getPrevWeight(day.id, ei, si);
+      let changed = val !== '' ? 'changed' : '';
+      return `<input class="weight-input ${changed}" type="number" step="0.5" min="0" 
+        placeholder="${prev ? prev+'→' : 'kg'}"
+        value="${val}"
+        oninput="setWeight(${currentWeek},'${day.id}',${ei},${si},this.value);this.classList.add('changed')"
+        title="${prev ? 'Last week: '+prev+'kg' : 'Enter weight'}"
+      >`;
+    });
+
+    // Progress vs last week (avg)
+    let progressHTML = '';
+    if (currentWeek > 1) {
+      let curr = [], prev = [];
+      for (let s = 0; s < ex.sets; s++) {
+        const c = parseFloat(getWeight(currentWeek, day.id, ei, s));
+        const p = parseFloat(getPrevWeight(day.id, ei, s));
+        if (!isNaN(c)) curr.push(c);
+        if (!isNaN(p)) prev.push(p);
+      }
+      if (curr.length && prev.length) {
+        const ca = curr.reduce((a,b)=>a+b,0)/curr.length;
+        const pa = prev.reduce((a,b)=>a+b,0)/prev.length;
+        const diff = (ca - pa).toFixed(1);
+        if (diff > 0) progressHTML = `<span class="progress-pill">+${diff}kg ↑</span>`;
+        else if (diff < 0) progressHTML = `<span class="progress-pill down">${diff}kg ↓</span>`;
+        else progressHTML = `<span class="progress-pill same">= same</span>`;
+      }
+    }
+
+    html += `
+      <div class="exercise-row">
+        <div>
+          <div class="ex-name">${ex.name} ${progressHTML}</div>
+          <div class="ex-target">${ex.target}</div>
+        </div>
+        <div class="ex-meta">${ex.sets}</div>
+        <div class="ex-meta">${ex.reps}</div>
+        ${setInputs.join('')}
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+
+  // History toggle
+  html += `
+    <div class="history-toggle" onclick="toggleHistory('hist-${day.id}')">
+      ▸ VIEW WEIGHT HISTORY (ALL WEEKS)
+    </div>
+    <div class="history-panel" id="hist-${day.id}">
+      ${renderHistory(day)}
+    </div>
+  `;
+
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function toggleHistory(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+  const toggle = el.previousElementSibling;
+  toggle.textContent = el.classList.contains('open') 
+    ? '▾ HIDE HISTORY' : '▸ VIEW WEIGHT HISTORY (ALL WEEKS)';
+}
+
+function renderHistory(day) {
+  const weeks = Object.keys(data).map(Number).sort((a,b) => a-b);
+  if (!weeks.length) return `<div style="color:var(--muted);font-size:0.8rem;font-family:'DM Mono',monospace">No history yet. Start logging weights!</div>`;
+
+  let html = '';
+  day.exercises.forEach((ex, ei) => {
+    html += `<div style="margin-bottom:16px">`;
+    html += `<div style="font-size:0.75rem;font-family:'DM Mono',monospace;color:var(--text);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">${ex.name}</div>`;
+    html += `<div style="display:flex;gap:8px;flex-wrap:wrap">`;
+    weeks.forEach(w => {
+      const sets = [];
+      for (let s = 0; s < ex.sets; s++) {
+        const v = getWeight(w, day.id, ei, s);
+        if (v) sets.push(v + 'kg');
+      }
+      if (sets.length) {
+        html += `<div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:0.72rem;font-family:'DM Mono',monospace">
+          <div style="color:var(--muted);margin-bottom:3px">W${w}</div>
+          <div style="color:var(--text)">${sets.join(' · ')}</div>
+        </div>`;
+      }
+    });
+    html += `</div></div>`;
+  });
+  return html || `<div style="color:var(--muted);font-size:0.8rem;font-family:'DM Mono',monospace">No weights logged yet for this day.</div>`;
+}
+
+function renderRestDay() {
+  return `
+    <div class="session-header">
+      <div>
+        <div class="session-title rest">REST DAY</div>
+        <div class="session-subtitle">Sunday — Full Recovery · No Gym Today</div>
+      </div>
+    </div>
+    <div class="rest-card">
+      <div class="rest-icon">🛌</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:3px;color:var(--muted)">RECOVER. GROW. REPEAT.</div>
+      <div style="color:var(--muted);margin-top:8px;font-size:0.85rem">This is when the muscles actually grow. Don't skip it.</div>
+      <div class="rest-tips">
+        <div class="rest-tip-card"><h4>😴 Sleep</h4><p>7–9 hours. Growth hormone peaks during deep sleep.</p></div>
+        <div class="rest-tip-card"><h4>💧 Hydration</h4><p>3–4 litres of water. Aids muscle repair.</p></div>
+        <div class="rest-tip-card"><h4>🥩 Protein</h4><p>Still hit 1.6–2.2g/kg. Don't skip nutrition on rest days.</p></div>
+        <div class="rest-tip-card"><h4>🚶 Light Activity</h4><p>Easy walk only. No gym, no heavy cardio.</p></div>
+        <div class="rest-tip-card"><h4>📅 Deload</h4><p>Every 8–10 weeks, do 50% weight on all lifts for a full week.</p></div>
+      </div>
+    </div>
+  `;
+}
+
+// ===================== EXPORT =====================
+function exportCSV() {
+  const rows = [['Week','Day','Exercise','Set 1 (kg)','Set 2 (kg)','Set 3 (kg)','Set 4 (kg)']];
+  const weeks = Object.keys(data).map(Number).sort((a,b)=>a-b);
+  weeks.forEach(w => {
+    DAYS.filter(d => d.type !== 'rest').forEach(day => {
+      day.exercises.forEach((ex, ei) => {
+        const sets = [0,1,2,3].map(si => getWeight(w, day.id, ei, si) || '');
+        rows.push([`W${w}`, day.label, ex.name, ...sets]);
+      });
+    });
+  });
+  const csv = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `PPL_Weights_Export.csv`;
+  a.click();
+}
+
+// ===================== INIT =====================
+function render() {
+  renderDayNav();
+  renderMain();
+}
+
+loadData();
+// Default to today's day
+const dayMap = {1:'push1',2:'pull1',3:'legs1',4:'push2',5:'pull2',6:'legs2',0:'rest'};
+currentDay = dayMap[new Date().getDay()];
+render();
+</script>
+</body>
+</html>
