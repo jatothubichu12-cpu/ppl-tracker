@@ -3,7 +3,7 @@
 A 6-day Push Pull Legs workout weight tracker built with HTML/CSS/JS.
 
 ## 🔗 Live Tracker
-[Open PPL Tracker](https://jatothubichu12-cpu.github.io/ppl-tracker/PPL_Weight_Tracker.html)
+👉 **[OPEN TRACKER HERE](https://jatothubichu12-cpu.github.io/ppl-tracker/PPL_Weight_Tracker.html)**
 
 ## 📋 Program
 | Day | Session | Focus |
@@ -26,3 +26,6 @@ A 6-day Push Pull Legs workout weight tracker built with HTML/CSS/JS.
 
 ## 📱 Mobile
 Add to home screen on Android/iPhone for quick gym access.
+
+## 🔖 Bookmark
+https://jatothubichu12-cpu.github.io/ppl-tracker/PPL_Weight_Tracker.html
